@@ -67,27 +67,34 @@ class MultimeterController:
         selected_port = self.combobox.get()
         if selected_port:
             try:
+                print(f"Attempting to connect to {selected_port}")
                 self.ser = serial.Serial(selected_port, 9600, timeout=1)
                 self.running = True
+                print(f"Successfully connected to {selected_port}")
                 self.update_thread = threading.Thread(target=self.update_measurements)
                 self.update_thread.start()
             except serial.SerialException as e:
+                print(f"Failed to connect to {selected_port}: {e}")
                 messagebox.showerror("Connection Error", f"Failed to connect to {selected_port}\n{e}")
                 self.ser = None
 
     def send_command(self, command):
         """Send SCPI command to multimeter."""
         try:
+            print(f"Sending command: {command}")
             self.ser.write((command + '\n').encode())
             response = self.ser.readline().decode().strip()
+            print(f"Received response: {response}")
             return response
         except Exception as e:
+            print(f"Failed to send command: {command}, Error: {e}")
             messagebox.showerror("Communication Error", f"Failed to send command: {e}")
             return ""
 
     def update_measurements(self):
         while self.running:
             try:
+                print("Updating measurements...")
                 voltage = float(self.send_command("VAL1?"))  # Query primary display
                 current = float(self.send_command("VAL2?"))  # Query secondary display (if applicable)
                 # For example purposes, using VAL2 as current, VAL3 could be used similarly if needed.
@@ -109,10 +116,12 @@ class MultimeterController:
 
                 time.sleep(1)
             except Exception as e:
+                print(f"Error during measurement update: {e}")
                 messagebox.showerror("Update Error", f"Failed to update measurements: {e}")
                 self.running = False
 
     def plot_data(self):
+        print("Plotting data...")
         self.ax[0].clear()
         self.ax[1].clear()
 
@@ -124,11 +133,14 @@ class MultimeterController:
         self.ax[1].set_xlabel("Time (s)")
 
         self.canvas.draw()
+        print("Data plotted.")
 
     def close(self):
+        print("Closing application...")
         self.running = False
         if self.ser:
             self.ser.close()
+            print("Serial port closed.")
         self.master.quit()
 
 # Create the main application window
